@@ -1,0 +1,7 @@
+# ignorar ambiente virtual, cache do python, py test e variáveis.
+.env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+.env.*
