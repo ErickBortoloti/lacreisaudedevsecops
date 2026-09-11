@@ -33,10 +33,16 @@ jobs:
       - name: Subir API
         run: docker run -d --name lacreisaude-api -p 8000:8000 lacreisaudeapi:ci
 
-      - name: Status container
-        run: |
-          docker ps -a
-          docker logs lacreisaude-api
-
       - name: Valida API
-        run: curl http://localhost:8000/status      
+        run: |
+          for i in {1..5}; do
+            if curl --fail http://localhost:8000/status; then
+              exit 0
+            fi
+            echo "API está subindo - Tentativa $i..."
+            sleep 5 
+          done
+
+          echo "API não ficou disponível :c"
+          docker logs lacreisaude-api
+          exit 1
