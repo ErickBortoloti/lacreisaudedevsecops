@@ -33,5 +33,10 @@ jobs:
       - name: Subir API
         run: docker run -d --name lacreisaude-api -p 8000:8000 lacreisaudeapi:ci
 
+      - name: Status container
+        run: |
+          docker ps -a
+          docker logs lacreisaude-api
+
       - name: Valida API
         run: curl http://localhost:8000/status      
