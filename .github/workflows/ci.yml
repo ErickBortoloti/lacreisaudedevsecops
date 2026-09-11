@@ -25,4 +25,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Testar
-        run: pytest      
+        run: pytest
+      
+      - name: Build image
+        run: docker build -t lacreisaudeapi:ci .      
