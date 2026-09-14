@@ -93,3 +93,26 @@ jobs:
         run: |
           docker tag lacreisaudeapi:ci ${{ secrets.DOCKER_HUB_USER }}/lacreisaudeapi:latest
           docker push ${{ secrets.DOCKER_HUB_USER }}/lacreisaudeapi:latest
+          
+      - name: Deploy na VM
+        run: |
+          gcloud compute ssh lacreisaude-api \
+            --zone=us-east1-b \
+            --tunnel-through-iap \
+            --command="
+              set -e
+
+              sudo docker pull us-east1-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/lacreisaude/lacreisaudeapi:${{ github.sha }}
+
+              sudo docker stop lacreisaude-api || true
+              sudo docker rm lacreisaude-api || true
+
+              sudo docker run -d \
+                --name lacreisaude-api \
+                -p 8000:8000 \
+                us-east1-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/lacreisaude/lacreisaudeapi:${{ github.sha }}
+
+              sleep 3
+
+              curl --fail http://localhost:8000/status
+            "
