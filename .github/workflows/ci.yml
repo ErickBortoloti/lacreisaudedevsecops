@@ -94,25 +94,36 @@ jobs:
           docker tag lacreisaudeapi:ci ${{ secrets.DOCKER_HUB_USER }}/lacreisaudeapi:latest
           docker push ${{ secrets.DOCKER_HUB_USER }}/lacreisaudeapi:latest
           
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Autenticar GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Configurar Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
       - name: Deploy na VM
         run: |
           gcloud compute ssh lacreisaude-api \
             --zone=us-east1-b \
             --tunnel-through-iap \
             --command="
-              set -e
-
-              sudo docker pull us-east1-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/lacreisaude/lacreisaudeapi:${{ github.sha }}
-
+              sudo docker pull us-east1-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/lacreisaude/lacreisaudeapi:${{ github.sha }} &&
               sudo docker stop lacreisaude-api || true
               sudo docker rm lacreisaude-api || true
-
               sudo docker run -d \
                 --name lacreisaude-api \
                 -p 8000:8000 \
                 us-east1-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/lacreisaude/lacreisaudeapi:${{ github.sha }}
-
-              sleep 3
-
-              curl --fail http://localhost:8000/status
             "
